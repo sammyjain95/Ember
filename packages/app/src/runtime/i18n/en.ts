@@ -1075,6 +1075,9 @@ export const dict = {
     "This provider connects a different way. Pick another above, or connect it later in Settings.",
   "firstRun.step2.error.invalidKey":
     "That key wasn't accepted. Check for typos or extra spaces and try again, or grab a fresh key from the link above.",
+  "firstRun.step2.noValidation":
+    "On this browser version Ember saves the key without checking it first — double-check for typos.",
+  "firstRun.step2.noProviders": "No AI providers found. Connect one later in Settings.",
   "firstRun.step3.title": "You're all set!",
   "firstRun.step3.body": "Ember is ready to help. Just describe what you want in plain words.",
   "firstRun.step3.start": "Start chatting",
@@ -1093,6 +1096,7 @@ export const dict = {
   "spend.loading": "Loading your spending…",
   "spend.error": "Couldn't load your spending. Check your connection and try again.",
   "spend.retry": "Try again",
+  "spend.truncated": "Showing recent spending — older history isn't included.",
   "spend.noServer": "Connect to a server to see your spending.",
   "command.spend.open": "View spending",
 }

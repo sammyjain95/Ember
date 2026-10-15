@@ -7,8 +7,6 @@ export interface DayBucket {
   count: number
 }
 
-const DAY_MS = 24 * 60 * 60 * 1000
-
 const usd = new Intl.NumberFormat(undefined, { style: "currency", currency: "USD" })
 
 export function formatMoney(amount: number): string {
@@ -34,7 +32,11 @@ export function isToday(timestamp: number, now = Date.now()): boolean {
 }
 
 export function isYesterday(timestamp: number, now = Date.now()): boolean {
-  return dayKey(timestamp) === dayKey(now - DAY_MS)
+  const yesterday = new Date(now)
+
+  yesterday.setDate(yesterday.getDate() - 1)
+
+  return dayKey(timestamp) === dayKey(yesterday.getTime())
 }
 
 export function formatTime(timestamp: number): string {
@@ -50,10 +52,17 @@ export function bucketByDay(
   days: number,
   now = Date.now(),
 ): Array<DayBucket> {
-  const todayStart = startOfDay(now)
+  const base = new Date(now)
 
+  base.setHours(0, 0, 0, 0)
+
+  // Calendar days, not 24h steps, so a 23h/25h DST day keeps distinct midnights.
   const buckets = Array.from({ length: days }, (_, index) => {
-    const start = todayStart - (days - 1 - index) * DAY_MS
+    const date = new Date(base)
+
+    date.setDate(base.getDate() - (days - 1 - index))
+
+    const start = date.getTime()
 
     return { key: dayKey(start), start, total: 0, count: 0 }
   })
@@ -74,4 +83,23 @@ export function bucketByDay(
 
 export function sumCost(sessions: ReadonlyArray<SessionInfo>): number {
   return sessions.reduce((total, session) => total + session.cost, 0)
+}
+
+export function lookbackCutoff(now: number, days: number): number {
+  const date = new Date(now)
+
+  date.setHours(0, 0, 0, 0)
+  date.setDate(date.getDate() - (days - 1))
+
+  return date.getTime()
+}
+
+export function shouldStopPaging(
+  oldestCreated: number | undefined,
+  next: string | undefined,
+  cutoff: number,
+): boolean {
+  if (!next || oldestCreated === undefined) return true
+
+  return oldestCreated < cutoff
 }

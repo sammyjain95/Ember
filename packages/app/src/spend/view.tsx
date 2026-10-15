@@ -11,7 +11,8 @@ import {
   formatTime,
   isToday,
   isYesterday,
-  startOfDay,
+  lookbackCutoff,
+  shouldStopPaging,
 } from "./model"
 
 const PAGE_LIMIT = 200
@@ -20,14 +21,17 @@ const MAX_PAGES = 10
 
 const LOOKBACK_DAYS = 14
 
-const DAY_MS = 24 * 60 * 60 * 1000
-
 const RECENT_LIMIT = 20
 
-async function fetchSpendSessions(ctx: ServerCtx, signal: AbortSignal): Promise<Array<SessionInfo>> {
+export interface SpendResult {
+  sessions: Array<SessionInfo>
+  truncated: boolean
+}
+
+async function fetchSpendSessions(ctx: ServerCtx, signal: AbortSignal): Promise<SpendResult> {
   const sessions: Array<SessionInfo> = []
 
-  const cutoff = startOfDay(Date.now()) - (LOOKBACK_DAYS - 1) * DAY_MS
+  const cutoff = lookbackCutoff(Date.now(), LOOKBACK_DAYS)
 
   let cursor: string | undefined
 
@@ -43,12 +47,12 @@ async function fetchSpendSessions(ctx: ServerCtx, signal: AbortSignal): Promise<
 
     const next = response.cursor.next ?? undefined
 
-    if (!next || !oldest || oldest.time.created < cutoff) break
+    if (shouldStopPaging(oldest?.time.created, next, cutoff)) return { sessions, truncated: false }
 
     cursor = next
   }
 
-  return sessions
+  return { sessions, truncated: true }
 }
 
 export function SpendView() {
@@ -75,7 +79,9 @@ export function SpendView() {
     }
   })
 
-  const sessions = createMemo(() => sessionsQuery.data ?? [])
+  const sessions = createMemo(() => sessionsQuery.data?.sessions ?? [])
+
+  const truncated = createMemo(() => sessionsQuery.data?.truncated ?? false)
 
   const buckets = createMemo(() => bucketByDay(sessions(), LOOKBACK_DAYS))
 
@@ -165,6 +171,10 @@ export function SpendView() {
                     <p class="text-2xl font-semibold">{formatMoney(weekTotal())}</p>
                   </div>
                 </div>
+
+                <Show when={truncated()}>
+                  <p class="text-sm opacity-70">{language.t("spend.truncated")}</p>
+                </Show>
 
                 <div class="flex flex-col gap-3">
                   <h2 class="text-base font-medium">{language.t("spend.last14Days")}</h2>

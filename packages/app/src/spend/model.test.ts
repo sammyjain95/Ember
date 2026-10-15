@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test"
 import type { SessionInfo } from "@opencode/client/promise"
-import { bucketByDay, dayKey, startOfDay, sumCost } from "./model"
+import { bucketByDay, dayKey, isYesterday, lookbackCutoff, shouldStopPaging, startOfDay, sumCost } from "./model"
 
 function session(created: number, cost: number, overrides: Partial<SessionInfo> = {}): SessionInfo {
   // SAFETY: test fixture only; cost/time/fields under test are fully populated, the rest is never read.
@@ -53,5 +53,59 @@ describe("spend aggregation", () => {
 
     expect(dayKey(morning)).toBe(dayKey(evening))
     expect(dayKey(morning)).toBe("2026-01-05")
+  })
+
+  test("buckets keep midnight starts across a DST boundary", () => {
+    const previousTZ = process.env.TZ
+
+    process.env.TZ = "America/New_York"
+
+    try {
+      // Nov 1 2026 is the 25h fall-back day in New York.
+      const now = new Date(2026, 10, 2, 12, 0).getTime()
+      const buckets = bucketByDay([], 3, now)
+
+      expect(buckets).toHaveLength(3)
+      expect(new Set(buckets.map((bucket) => bucket.key))).toHaveLength(3)
+
+      for (const bucket of buckets) {
+        expect(bucket.start).toBe(startOfDay(bucket.start))
+      }
+    } finally {
+      if (previousTZ === undefined) delete process.env.TZ
+      else process.env.TZ = previousTZ
+    }
+  })
+
+  test("isYesterday follows the calendar, not 24h ago", () => {
+    const previousTZ = process.env.TZ
+
+    process.env.TZ = "America/New_York"
+
+    try {
+      // 25h Sunday: yesterday 00:30 is 25h+ before Monday noon, still yesterday.
+      const now = new Date(2026, 10, 2, 12, 0).getTime()
+      const lateYesterday = new Date(2026, 10, 1, 23, 30).getTime()
+
+      expect(isYesterday(lateYesterday, now)).toBe(true)
+      expect(isYesterday(now, now)).toBe(false)
+    } finally {
+      if (previousTZ === undefined) delete process.env.TZ
+      else process.env.TZ = previousTZ
+    }
+  })
+
+  test("lookbackCutoff lands on a calendar midnight", () => {
+    const now = new Date(2026, 9, 15, 14, 30).getTime()
+
+    expect(lookbackCutoff(now, 14)).toBe(startOfDay(new Date(2026, 9, 2, 12, 0).getTime()))
+  })
+
+  test("paging stops at the end, on missing data, or before the cutoff", () => {
+    expect(shouldStopPaging(undefined, undefined, 100)).toBe(true)
+    expect(shouldStopPaging(50, undefined, 100)).toBe(true)
+    expect(shouldStopPaging(50, "next", 100)).toBe(true)
+    expect(shouldStopPaging(100, "next", 100)).toBe(false)
+    expect(shouldStopPaging(150, "next", 100)).toBe(false)
   })
 })

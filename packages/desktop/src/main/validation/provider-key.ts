@@ -1,6 +1,7 @@
 import { ipcMain } from "electron"
 import { ValidateProviderKeyChannel } from "../../shared/ipc-transport"
 import { isRendererUrl } from "../windows/scheme"
+import { classifyProviderKeyStatus, isProviderKeyInput } from "./provider-key-status"
 
 export type ProviderKeyValidation = {
   valid: boolean
@@ -35,13 +36,8 @@ export function registerValidateProviderKeyHandler() {
     // SAFETY: the I/O boundary check below establishes the complete contract: a
     // non-null object whose providerID and key are both non-empty strings.
     // oxlint-disable-next-line anti-slop/no-runtime-typeof -- see SAFETY above
-    if (typeof input !== "object" || input === null) return { valid: false, reason: "unreachable" }
-    // SAFETY: the typeof guards above established input as a non-null object.
-    const { providerID, key } = input as { providerID?: unknown; key?: unknown }
-
-    // oxlint-disable-next-line anti-slop/no-runtime-typeof -- see SAFETY above
-    if (typeof providerID !== "string" || typeof key !== "string" || key.length === 0)
-      return { valid: false, reason: "unreachable" }
+    if (!isProviderKeyInput(input)) return { valid: false, reason: "unreachable" }
+    const { providerID, key } = input
 
     const probe = keyProbes[providerID]
 
@@ -55,12 +51,6 @@ export function registerValidateProviderKeyHandler() {
       return { valid: false, reason: "unreachable" }
     }
 
-    // 401/403 means the provider rejected the key. Anything else below 500
-    // means the key was accepted (even 429: rate-limited, not invalid).
-    if (res.status === 401 || res.status === 403) return { valid: false, reason: "invalid_key" }
-
-    if (res.status < 500) return { valid: true }
-
-    return { valid: false, reason: "unreachable" }
+    return classifyProviderKeyStatus(res.status)
   })
 }

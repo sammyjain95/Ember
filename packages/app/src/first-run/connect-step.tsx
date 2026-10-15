@@ -7,6 +7,7 @@ import { createStore } from "solid-js/store"
 import { useLanguage } from "@/runtime/i18n/language"
 import { useIntegrations } from "@/providers/catalog/integrations"
 import { createProviderConnectionController } from "@/providers/connect/controller"
+import { buildProviderOptions } from "./options"
 
 // Minimal shape of the desktop bridge for key validation. Undefined on web,
 // where validation is skipped (upstream behavior).
@@ -22,19 +23,8 @@ const getBridge = (): ElectronBridge | undefined =>
     ? (window as unknown as { electron?: ElectronBridge }).electron
     : undefined
 
-// Friendly providers that accept a pasted API key, in presentation order,
-// each with a direct link to its key settings page.
-const CURATED = [
-  { id: "anthropic", helpUrl: "https://console.anthropic.com/settings/keys" },
-  { id: "openai", helpUrl: "https://platform.openai.com/api-keys" },
-  { id: "google", helpUrl: "https://aistudio.google.com/apikey" },
-]
-
-type ProviderOption = {
-  id: string
-  name: string
-  helpUrl?: string
-}
+// Friendly providers that accept a pasted API key live in ./options so the
+// ordering/fallback contract is unit-testable without the provider catalog.
 
 /**
  * Step 2 of the first-run wizard: pick a provider and paste an API key.
@@ -51,19 +41,11 @@ export const ConnectStep: Component<{
   const integrations = useIntegrations(() => undefined)
   const errorID = createUniqueId()
 
-  const options = createMemo<ProviderOption[]>(() => {
-    const list = integrations.list()
+  const options = createMemo(() => buildProviderOptions(integrations.list()))
 
-    const curated = CURATED.flatMap((entry) => {
-      const found = list.find((item) => item.id === entry.id)
+  const catalogReady = () => integrations.ready()
 
-      return found ? [{ id: found.id, name: found.name, helpUrl: entry.helpUrl }] : []
-    })
-
-    if (curated.length > 0) return curated
-
-    return list.slice(0, 3).map((item) => ({ id: item.id, name: item.name }))
-  })
+  const hasBridge = createMemo(() => getBridge() !== undefined)
 
   const [state, setState] = createStore<{
     provider: string
@@ -181,27 +163,38 @@ export const ConnectStep: Component<{
       <div class="mt-5 text-[13px] font-medium text-v2-text-text-base">
         {language.t("firstRun.step2.providerLabel")}
       </div>
-      <div class="mt-2 flex flex-wrap gap-2" role="radiogroup" aria-label={language.t("firstRun.step2.providerLabel")}>
-        <For each={options()}>
-          {(option) => (
-            <button
-              type="button"
-              role="radio"
-              aria-checked={state.provider === option.id}
-              onClick={() => selectProvider(option.id)}
-              class="rounded-full border px-4 py-2 text-[13px] font-medium transition-colors"
-              classList={{
-                "border-v2-text-text-base bg-v2-text-text-base text-v2-background-bg-base":
-                  state.provider === option.id,
-                "border-v2-border-border-base text-v2-text-text-muted hover:text-v2-text-text-base":
-                  state.provider !== option.id,
-              }}
-            >
-              {option.name}
-            </button>
-          )}
-        </For>
-      </div>
+      <Show when={catalogReady()} fallback={<p class="mt-2 text-[13px] text-v2-text-text-muted">{language.t("common.loading")}</p>}>
+        <Show
+          when={options().length > 0}
+          fallback={<p class="mt-2 text-[13px] text-v2-text-text-muted">{language.t("firstRun.step2.noProviders")}</p>}
+        >
+          <div
+            class="mt-2 flex flex-wrap gap-2"
+            role="radiogroup"
+            aria-label={language.t("firstRun.step2.providerLabel")}
+          >
+            <For each={options()}>
+              {(option) => (
+                <button
+                  type="button"
+                  role="radio"
+                  aria-checked={state.provider === option.id}
+                  onClick={() => selectProvider(option.id)}
+                  class="rounded-full border px-4 py-2 text-[13px] font-medium transition-colors"
+                  classList={{
+                    "border-v2-text-text-base bg-v2-text-text-base text-v2-background-bg-base":
+                      state.provider === option.id,
+                    "border-v2-border-border-base text-v2-text-text-muted hover:text-v2-text-text-base":
+                      state.provider !== option.id,
+                  }}
+                >
+                  {option.name}
+                </button>
+              )}
+            </For>
+          </div>
+        </Show>
+      </Show>
 
       <form
         class="mt-5 flex flex-col gap-3"
@@ -234,6 +227,10 @@ export const ConnectStep: Component<{
               <span>{error()}</span>
             </div>
           )}
+        </Show>
+
+        <Show when={!hasBridge()}>
+          <p class="text-[13px] leading-5 text-v2-text-text-muted">{language.t("firstRun.step2.noValidation")}</p>
         </Show>
 
         <div>
