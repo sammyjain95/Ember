@@ -85,6 +85,64 @@ export function sumCost(sessions: ReadonlyArray<SessionInfo>): number {
   return sessions.reduce((total, session) => total + session.cost, 0)
 }
 
+export interface ModelBucket {
+  provider: string
+  model: string
+  total: number
+  input: number
+  output: number
+  count: number
+}
+
+export function bucketByModel(sessions: ReadonlyArray<SessionInfo>): Array<ModelBucket> {
+  const byKey = new Map<string, ModelBucket>()
+
+  for (const session of sessions) {
+    const provider = session.model?.providerID ?? "unknown"
+    const model = session.model?.id ?? "unknown"
+    const key = `${provider}/${model}`
+    const bucket = byKey.get(key)
+
+    if (bucket) {
+      bucket.total += session.cost
+      bucket.input += session.tokens.input
+      bucket.output += session.tokens.output
+      bucket.count += 1
+    } else {
+      byKey.set(key, {
+        provider,
+        model,
+        total: session.cost,
+        input: session.tokens.input,
+        output: session.tokens.output,
+        count: 1,
+      })
+    }
+  }
+
+  return [...byKey.values()].sort((a, b) => b.total - a.total)
+}
+
+export function formatTokens(count: number): string {
+  if (count < 1000) return String(count)
+
+  const units: Array<[number, string]> = [
+    [1_000_000_000, "B"],
+    [1_000_000, "M"],
+    [1000, "K"],
+  ]
+
+  for (const [divisor, suffix] of units) {
+    if (count >= divisor) {
+      const value = count / divisor
+
+      return `${value >= 100 ? Math.round(value) : Math.round(value * 10) / 10}${suffix}`
+    }
+  }
+
+  return String(count)
+}
+
 export function lookbackCutoff(now: number, days: number): number {
   const date = new Date(now)
 

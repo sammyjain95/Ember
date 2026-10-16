@@ -1,3 +1,4 @@
+import { useNavigate } from "@solidjs/router"
 import { useDirectoryPicker } from "@/workspaces/selection/picker"
 import { useServerActionsController } from "@/servers/registry/controller"
 import { useSettingsCommand } from "@/settings/command"
@@ -30,6 +31,7 @@ export function createHomeProjectsController(home: HomeController) {
   const language = useLanguage()
   const openSettings = useSettingsCommand()
   useSpendCommand()
+  const navigate = useNavigate()
   const settings = useSettingsSurface()
   const serverManagement = useServerActionsController()
   const global = useGlobal()
@@ -184,6 +186,7 @@ export function createHomeProjectsController(home: HomeController) {
     },
     utility: {
       settings: openSettings,
+      spend: () => navigate("/spend"),
       help: () => platform.openExternal("https://opencode.ai/desktop-feedback"),
     },
   }

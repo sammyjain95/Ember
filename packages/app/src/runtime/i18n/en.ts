@@ -1097,6 +1097,11 @@ export const dict = {
   "spend.error": "Couldn't load your spending. Check your connection and try again.",
   "spend.retry": "Try again",
   "spend.truncated": "Showing recent spending — older history isn't included.",
+  "spend.byModel": "Usage by model",
+  "spend.model.unknown": "Unknown model",
+  "spend.model.sessions.one": "{{count}} session",
+  "spend.model.sessions.other": "{{count}} sessions",
+  "spend.model.tokens": "{{count}} tokens",
   "spend.noServer": "Connect to a server to see your spending.",
   "command.spend.open": "View spending",
 }

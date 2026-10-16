@@ -6,9 +6,11 @@ import { ServerConnection, useServers } from "@/runtime/server/registry"
 import { useServerCtx, type ServerCtx } from "@/runtime/server/runtime"
 import {
   bucketByDay,
+  bucketByModel,
   formatDayLabel,
   formatMoney,
   formatTime,
+  formatTokens,
   isToday,
   isYesterday,
   lookbackCutoff,
@@ -80,6 +82,8 @@ export function SpendView() {
   })
 
   const sessions = createMemo(() => sessionsQuery.data?.sessions ?? [])
+
+  const modelBuckets = createMemo(() => bucketByModel(sessions()))
 
   const truncated = createMemo(() => sessionsQuery.data?.truncated ?? false)
 
@@ -195,6 +199,36 @@ export function SpendView() {
                           </div>
 
                           <span class="w-20 shrink-0 text-right text-sm tabular-nums">
+                            {formatMoney(bucket.total)}
+                          </span>
+                        </div>
+                      )}
+                    </For>
+                  </div>
+                </div>
+
+                <div class="flex flex-col gap-3">
+                  <h2 class="text-base font-medium">{language.t("spend.byModel")}</h2>
+
+                  <div class="flex flex-col divide-y divide-v2-border-border-subtle">
+                    <For each={modelBuckets()}>
+                      {(bucket) => (
+                        <div class="flex items-baseline justify-between gap-3 py-2">
+                          <span class="min-w-0 flex-1 truncate text-sm">
+                            <span class="font-medium">
+                              {bucket.provider === "unknown" && bucket.model === "unknown"
+                                ? language.t("spend.model.unknown")
+                                : `${bucket.provider} / ${bucket.model}`}
+                            </span>
+
+                            <span class="opacity-70">
+                              {" "}
+                              · {language.plural("spend.model.sessions", bucket.count)} ·{" "}
+                              {language.t("spend.model.tokens", { count: formatTokens(bucket.input + bucket.output) })}
+                            </span>
+                          </span>
+
+                          <span class="shrink-0 text-sm font-medium tabular-nums">
                             {formatMoney(bucket.total)}
                           </span>
                         </div>

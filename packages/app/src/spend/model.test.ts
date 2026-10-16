@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test"
 import type { SessionInfo } from "@opencode/client/promise"
-import { bucketByDay, dayKey, isYesterday, lookbackCutoff, shouldStopPaging, startOfDay, sumCost } from "./model"
+import { bucketByDay, bucketByModel, dayKey, formatTokens, isYesterday, lookbackCutoff, shouldStopPaging, startOfDay, sumCost } from "./model"
 
 function session(created: number, cost: number, overrides: Partial<SessionInfo> = {}): SessionInfo {
   // SAFETY: test fixture only; cost/time/fields under test are fully populated, the rest is never read.
@@ -107,5 +107,31 @@ describe("spend aggregation", () => {
     expect(shouldStopPaging(50, "next", 100)).toBe(true)
     expect(shouldStopPaging(100, "next", 100)).toBe(false)
     expect(shouldStopPaging(150, "next", 100)).toBe(false)
+  })
+
+  test("buckets usage by model sorted by cost with token totals", () => {
+    const now = Date.now()
+
+    const sessions = [
+      session(now, 1.0, { model: { id: "a", providerID: "p1" }, tokens: { input: 100, output: 50, reasoning: 0, cache: { read: 0, write: 0 } } }),
+      session(now, 2.0, { model: { id: "a", providerID: "p1" }, tokens: { input: 200, output: 100, reasoning: 0, cache: { read: 0, write: 0 } } }),
+      session(now, 5.0, { model: { id: "b", providerID: "p2" }, tokens: { input: 10, output: 5, reasoning: 0, cache: { read: 0, write: 0 } } }),
+      session(now, 0.5),
+    ]
+
+    const buckets = bucketByModel(sessions)
+
+    expect(buckets).toHaveLength(3)
+    expect(buckets[0]).toMatchObject({ provider: "p2", model: "b", total: 5, count: 1 })
+    expect(buckets[1]).toMatchObject({ provider: "p1", model: "a", total: 3, input: 300, output: 150, count: 2 })
+    expect(buckets[2]).toMatchObject({ provider: "unknown", model: "unknown" })
+    expect(bucketByModel([])).toEqual([])
+  })
+
+  test("formats token counts compactly", () => {
+    expect(formatTokens(412)).toBe("412")
+    expect(formatTokens(1500)).toBe("1.5K")
+    expect(formatTokens(2400000)).toBe("2.4M")
+    expect(formatTokens(300000000)).toBe("300M")
   })
 })
