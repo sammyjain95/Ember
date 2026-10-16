@@ -18,10 +18,26 @@ type ElectronBridge = {
   ): Promise<{ valid: boolean; reason?: "invalid_key" | "unreachable" | "unsupported" }>
 }
 
-const getBridge = (): ElectronBridge | undefined =>
-  typeof window !== "undefined"
-    ? (window as unknown as { electron?: ElectronBridge }).electron
-    : undefined
+const getBridge = (): ElectronBridge | undefined => {
+  // SAFETY: window.electron is untrusted IPC bridge; validate shape before use.
+  // oxlint-disable-next-line anti-slop/no-runtime-typeof -- boundary window check, see SAFETY above
+  if (typeof window === "undefined") return undefined
+
+  // SAFETY: cast only reads optional electron field, validated below.
+  // oxlint-disable-next-line anti-slop/require-safety-comment-for-type-assertion -- see SAFETY above
+  // oxlint-disable-next-line anti-slop/no-chained-type-assertions -- single optional read, validated below
+  const candidate = (window as unknown as { electron?: unknown }).electron
+
+  // oxlint-disable-next-line anti-slop/no-runtime-typeof -- boundary object check, see SAFETY above
+  if (typeof candidate !== "object" || candidate === null) return undefined
+
+  // oxlint-disable-next-line anti-slop/no-runtime-typeof -- boundary method check, see SAFETY above
+  if (typeof (candidate as ElectronBridge).validateProviderKey !== "function") return undefined
+
+  // SAFETY: shape validated above.
+  // oxlint-disable-next-line anti-slop/require-safety-comment-for-type-assertion -- see SAFETY above
+  return candidate as ElectronBridge
+}
 
 // Friendly providers that accept a pasted API key live in ./options so the
 // ordering/fallback contract is unit-testable without the provider catalog.
@@ -52,19 +68,19 @@ export const ConnectStep: Component<{
     key: string
     helpOpen: boolean
     busy: boolean
+    done: boolean
     error?: string
   }>({
     provider: "",
     key: "",
     helpOpen: false,
     busy: false,
+    done: false,
   })
 
-  let advanced = false
-
   const advance = () => {
-    if (advanced) return
-    advanced = true
+    if (state.done) return
+    setState({ done: true, busy: false })
     props.onConnected()
   }
 
@@ -95,7 +111,7 @@ export const ConnectStep: Component<{
       return
     }
 
-    void controller.auth.select(index)
+    void controller.auth.select(index).catch(() => undefined)
   })
 
   const selectProvider = (id: string) => {

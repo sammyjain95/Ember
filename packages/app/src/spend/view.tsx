@@ -17,6 +17,8 @@ import {
   shouldStopPaging,
 } from "./model"
 
+// Paging window: 200 rows per page, up to 10 pages (2000 rows) covering 14 days.
+// Truncated=true means the cap hit before the cutoff; UI shows partial window.
 const PAGE_LIMIT = 200
 
 const MAX_PAGES = 10
@@ -62,6 +64,8 @@ export function SpendView() {
 
   const servers = useServers()
 
+  // Spend has no home selection context; use first visible server.
+  // Matches Home fallback in packages/app/src/home/route.tsx:26-28.
   const server = createMemo(() => servers.visible[0])
 
   const ctx = useServerCtx(server)
@@ -72,7 +76,7 @@ export function SpendView() {
     const context = ctx()
 
     return {
-      queryKey: ["spend-sessions", connection ? ServerConnection.key(connection) : "none"] as const,
+      queryKey: ["spend-sessions", connection ? ServerConnection.key(connection) : "none", LOOKBACK_DAYS, PAGE_LIMIT, MAX_PAGES] as const,
       enabled: !!context && context.sdk.connection.status() === "connected",
       queryFn: context ? ({ signal }: { signal: AbortSignal }) => fetchSpendSessions(context, signal) : skipToken,
       retry: false,

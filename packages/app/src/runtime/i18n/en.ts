@@ -117,7 +117,7 @@ export const dict = {
   "dialog.model.chatgptPlan": "Using ChatGPT plan",
   "dialog.model.chatgptManageUsage": "Manage usage",
 
-  "dialog.model.unpaid.freeModels.title": "Free models provided by OpenCode",
+  "dialog.model.unpaid.freeModels.title": "Free models provided by Ember",
   "dialog.model.unpaid.addMore.title": "Add more models from popular providers",
   "dialog.model.unpaid.viewMoreProviders": "See 70+ more providers",
 
@@ -170,7 +170,7 @@ export const dict = {
   "provider.connect.chatgptUsageLimit.close": "Close",
   "provider.connect.console.refreshFailed":
     "Your account is connected, but we couldn't load your models. Try again to refresh them.",
-  "provider.connect.console.connected": "OpenCode connected",
+  "provider.connect.console.connected": "Ember connected",
   "provider.connect.console.noModels":
     "Your account is connected, but this Console workspace has no available models. Check its setup in Console, then refresh.",
   "provider.connect.console.modelsLoading": "Your models are still loading. Refresh to check again.",
@@ -180,7 +180,7 @@ export const dict = {
   "provider.connect.console.useApiKey": "Use API key",
   "provider.connect.remote.title": "Connecting on “{{server}}”",
   "provider.connect.remote.description":
-    "Your OpenCode credentials will be stored on this server. Models will be available through this server.",
+    "Your Ember credentials will be stored on this server. Models will be available through this server.",
   "provider.connect.title.anthropicProMax": "Login with Anthropic",
   "provider.connect.selectMethod": "Select login method for {{provider}}.",
   "provider.connect.method.apiKey": "API key",
@@ -372,13 +372,13 @@ export const dict = {
   "server.connect.pair.link": "Run this command on the server's computer to get a pairing link and QR code.",
   "server.connect.scan": "Scan QR code",
   "server.connect.scan.description": "Point your camera at the QR code shown by opencode pair.",
-  "server.connect.scan.invalid": "This is not an OpenCode pairing code. Scan the code shown by opencode pair.",
+  "server.connect.scan.invalid": "This is not an Ember pairing code. Scan the code shown by opencode pair.",
   "server.connect.scan.failed": "This browser could not read the QR code. Enter your connection details manually.",
   "server.connect.link.expired": "This pairing link expired or was already used. Run opencode pair to get a new one.",
   "server.connect.link.unreachable":
     "Could not reach {{url}}. Check that this device can reach the server, then try again.",
   "server.connect.link.legacy":
-    "This pairing code is from an older version of OpenCode. Update OpenCode on the server, then run opencode pair again.",
+    "This pairing code is from an older version of Ember. Update OpenCode on the server, then run opencode pair again.",
   "server.connect.camera": "Pairing camera",
   "server.connect.camera.starting": "Opening camera…",
   "server.connect.mixedContent":
@@ -458,7 +458,7 @@ export const dict = {
   "error.page.action.checkUpdates": "Check for updates",
   "error.page.action.updateTo": "Update to {{version}}",
   "error.page.circular": "[Circular]",
-  "error.page.report.prefix": "Please report this error to the OpenCode team",
+  "error.page.report.prefix": "Please report this error to the Ember team",
   "error.page.report.discord": "on Discord",
   "error.page.version": "Version: {{version}}",
 
@@ -483,7 +483,7 @@ export const dict = {
   "error.chain.didYouMean": "Did you mean: {{suggestions}}",
   "error.chain.modelNotFound": "Model not found: {{provider}}/{{model}}",
   "error.chain.checkConfig": "Check your config (opencode.json) provider/model names",
-  "error.chain.mcpFailed": 'MCP server "{{name}}" failed. Note, OpenCode does not support MCP authentication yet.',
+  "error.chain.mcpFailed": 'MCP server "{{name}}" failed. Note, Ember does not support MCP authentication yet.',
   "error.chain.providerAuthFailed": "Provider authentication failed ({{provider}}): {{message}}",
   "error.chain.providerInitFailed":
     'Failed to initialize provider "{{provider}}". Check credentials and configuration.',
@@ -521,6 +521,10 @@ export const dict = {
   "home.sessions.group.older": "Older",
   "home.providerTip": "Connect to 75+ providers to use other models, including Claude, GPT, Gemini, etc",
   "home.workspaceTip": "Start next session in a new workspace to keep changes isolated",
+  "home.tokenUsage.title": "Token usage by model",
+  "home.tokenUsage.loading": "Loading usage…",
+  "home.tokenUsage.empty": "No token usage recorded yet.",
+  "home.tokenUsage.total": "{{total}} total",
 
   "session.tab.session": "Session",
   "session.tab.more": "More...",

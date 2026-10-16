@@ -17,7 +17,7 @@ describe("digest file naming", () => {
 })
 
 describe("digest markdown", () => {
-  test("renders quote rows, error rows, and the SLV levels footer", () => {
+  test("renders quote rows and error rows without stale trade levels", () => {
     const markdown = buildDigestMarkdown("2026-10-16", [
       { symbol: "SLV", name: "Silver (SLV)", price: 51.92, dayPct: 3.39, weekPct: -5.22 },
       { symbol: "BAD", name: "Broken", error: "boom" },
@@ -26,6 +26,6 @@ describe("digest markdown", () => {
     expect(markdown).toContain("# Markets digest — 2026-10-16")
     expect(markdown).toContain("| Silver (SLV) | 51.92 | +3.39% | -5.22% |")
     expect(markdown).toContain("| Broken | n/a | boom | |")
-    expect(markdown).toContain("SLV map: Trigger >53.50")
+    expect(markdown).not.toContain("SLV map:")
   })
 })

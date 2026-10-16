@@ -14,7 +14,7 @@ export function isProviderKeyInput(input: unknown): input is { providerID: strin
   const { providerID, key } = input as { providerID?: unknown; key?: unknown }
 
   // oxlint-disable-next-line anti-slop/no-runtime-typeof -- see SAFETY above
-  return typeof providerID === "string" && typeof key === "string" && key.length > 0
+  return typeof providerID === "string" && typeof key === "string" && providerID.length > 0 && key.length > 0
 }
 
 export function classifyProviderKeyStatus(status: number): ProviderKeyVerdict {

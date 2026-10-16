@@ -9,8 +9,16 @@ export interface DayBucket {
 
 const usd = new Intl.NumberFormat(undefined, { style: "currency", currency: "USD" })
 
+// Boundary parser for untrusted session costs; finite numbers pass, else 0.
+// oxlint-disable-next-line anti-slop/no-unknown-parameters -- boundary parser, see above
+function cleanAmount(value: unknown): number {
+  // oxlint-disable-next-line anti-slop/no-runtime-typeof -- finite-number boundary check
+  return typeof value === "number" && Number.isFinite(value) ? value : 0
+}
+
 export function formatMoney(amount: number): string {
-  return usd.format(amount)
+  // oxlint-disable-next-line anti-slop/no-runtime-typeof -- defensive format guard, see cleanAmount
+  return usd.format(typeof amount === "number" && Number.isFinite(amount) ? amount : 0)
 }
 
 export function startOfDay(timestamp: number): number {
@@ -73,7 +81,7 @@ export function bucketByDay(
     const bucket = byKey.get(dayKey(session.time.created))
 
     if (bucket) {
-      bucket.total += session.cost
+      bucket.total += cleanAmount(session.cost)
       bucket.count += 1
     }
   }
@@ -82,7 +90,7 @@ export function bucketByDay(
 }
 
 export function sumCost(sessions: ReadonlyArray<SessionInfo>): number {
-  return sessions.reduce((total, session) => total + session.cost, 0)
+  return sessions.reduce((total, session) => total + cleanAmount(session.cost), 0)
 }
 
 export interface ModelBucket {
@@ -102,19 +110,22 @@ export function bucketByModel(sessions: ReadonlyArray<SessionInfo>): Array<Model
     const model = session.model?.id ?? "unknown"
     const key = `${provider}/${model}`
     const bucket = byKey.get(key)
+    const total = cleanAmount(session.cost)
+    const input = cleanAmount(session.tokens?.input)
+    const output = cleanAmount(session.tokens?.output)
 
     if (bucket) {
-      bucket.total += session.cost
-      bucket.input += session.tokens.input
-      bucket.output += session.tokens.output
+      bucket.total += total
+      bucket.input += input
+      bucket.output += output
       bucket.count += 1
     } else {
       byKey.set(key, {
         provider,
         model,
-        total: session.cost,
-        input: session.tokens.input,
-        output: session.tokens.output,
+        total,
+        input,
+        output,
         count: 1,
       })
     }

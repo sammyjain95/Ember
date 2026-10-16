@@ -7,8 +7,6 @@ export interface DigestQuote {
   error?: string
 }
 
-const SLV_LEVELS = "Trigger >53.50 / stop <49.90 / targets 55.50, 57.85 / support 50.0-50.2"
-
 export function digestFileName(now = new Date()): string {
   const month = String(now.getMonth() + 1).padStart(2, "0")
   const day = String(now.getDate()).padStart(2, "0")
@@ -32,5 +30,5 @@ function formatRow(quote: DigestQuote): string {
 export function buildDigestMarkdown(date: string, quotes: ReadonlyArray<DigestQuote>): string {
   const rows = quotes.map(formatRow).join("\n")
 
-  return `# Markets digest — ${date}\n\n| Instrument | Price | Day | 5-day |\n|---|---|---|---|\n${rows}\n\nSLV map: ${SLV_LEVELS}\n`
+  return `# Markets digest — ${date}\n\n| Instrument | Price | Day | 5-day |\n|---|---|---|---|\n${rows}\n`
 }

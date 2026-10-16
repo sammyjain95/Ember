@@ -1,6 +1,6 @@
-# OpenCode Desktop
+# Ember Desktop
 
-The OpenCode Desktop app, built with Electron.
+The Ember Desktop app, built with Electron.
 
 ## Development
 

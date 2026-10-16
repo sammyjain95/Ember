@@ -1,17 +1,47 @@
 import { Show, createMemo, createResource, For } from "solid-js"
 
 import { useServerSDK } from "@/runtime/server/client"
+import { useLanguage } from "@/runtime/i18n/language"
 
 const compact = new Intl.NumberFormat(undefined, { notation: "compact", maximumFractionDigits: 1 })
 const money = new Intl.NumberFormat(undefined, { style: "currency", currency: "USD", maximumFractionDigits: 2 })
 
-function totalTokens(tokens: any): number {
+interface TokenTotals {
+  input?: unknown
+  output?: unknown
+  reasoning?: unknown
+  cache?: { read?: unknown; write?: unknown }
+}
+
+// Boundary parser for untrusted session stats; callers pass through, no revalidation downstream.
+// oxlint-disable-next-line anti-slop/no-unknown-parameters -- boundary parser: unknown in, finite number out
+function cleanCount(value: unknown): number {
+  // oxlint-disable-next-line anti-slop/no-runtime-typeof -- boundary finite-number check, see above
+  return typeof value === "number" && Number.isFinite(value) ? value : 0
+}
+
+function totalTokens(tokens: TokenTotals | undefined | null): number {
   if (!tokens) return 0
-  return (tokens.input ?? 0) + (tokens.output ?? 0) + (tokens.reasoning ?? 0) + (tokens.cache?.read ?? 0) + (tokens.cache?.write ?? 0)
+
+  return (
+    cleanCount(tokens.input) +
+    cleanCount(tokens.output) +
+    cleanCount(tokens.reasoning) +
+    cleanCount(tokens.cache?.read) +
+    cleanCount(tokens.cache?.write)
+  )
+}
+
+interface ModelEntry {
+  model?: { providerID?: unknown; id?: unknown }
+  steps?: unknown
+  cost?: unknown
+  tokens?: TokenTotals | null
 }
 
 export function HomeTokenUsage() {
   const sdk = useServerSDK()
+  const language = useLanguage()
 
   const [stats] = createResource(
     () => sdk.connection.status() === "connected",
@@ -25,33 +55,44 @@ export function HomeTokenUsage() {
   )
 
   const models = createMemo(() => {
-    const list = stats()?.models ?? []
+    const list: ReadonlyArray<ModelEntry> = stats()?.models ?? []
+
     return [...list]
-      .map((entry: any) => ({
-        providerID: entry.model?.providerID ?? "unknown",
-        id: entry.model?.id ?? "unknown",
-        steps: entry.steps ?? 0,
-        cost: entry.cost ?? 0,
+      .map((entry) => ({
+        // oxlint-disable-next-line anti-slop/no-runtime-typeof -- boundary string check for untrusted model IDs
+        providerID: typeof entry.model?.providerID === "string" ? entry.model.providerID : "unknown",
+        // oxlint-disable-next-line anti-slop/no-runtime-typeof -- boundary string check, see above
+        id: typeof entry.model?.id === "string" ? entry.model.id : "unknown",
+        steps: cleanCount(entry.steps),
+        cost: cleanCount(entry.cost),
         tokens: totalTokens(entry.tokens),
       }))
       .sort((a, b) => b.tokens - a.tokens)
       .slice(0, 6)
   })
 
-  const total = createMemo(() => (stats()?.tokens ? totalTokens(stats()!.tokens) : 0))
+  const total = createMemo(() => {
+    const snapshot = stats()
+
+    if (!snapshot?.tokens) return 0
+
+    return totalTokens(snapshot.tokens)
+  })
 
   return (
     <Show when={sdk.connection.status() === "connected"}>
       <section class="flex min-w-0 flex-col gap-2 rounded-[10px] bg-v2-background-bg-layer-01 p-4 shadow-[var(--v2-elevation-raised)]">
         <div class="flex items-center justify-between">
-          <span class="text-13-medium [font-weight:530]">Token usage by model</span>
-          <span class="text-11-regular text-v2-text-text-muted">{compact.format(total())} total</span>
+          <span class="text-13-medium [font-weight:530]">{language.t("home.tokenUsage.title")}</span>
+          <span class="text-11-regular text-v2-text-text-muted">
+            {language.t("home.tokenUsage.total", { total: compact.format(total()) })}
+          </span>
         </div>
         <Show when={stats.loading}>
-          <span class="text-11-regular text-v2-text-text-muted">Loading usage…</span>
+          <span class="text-11-regular text-v2-text-text-muted">{language.t("home.tokenUsage.loading")}</span>
         </Show>
         <Show when={!stats.loading && models().length === 0}>
-          <span class="text-11-regular text-v2-text-text-muted">No token usage recorded yet.</span>
+          <span class="text-11-regular text-v2-text-text-muted">{language.t("home.tokenUsage.empty")}</span>
         </Show>
         <div class="flex min-w-0 flex-col gap-1">
           <For each={models()}>
