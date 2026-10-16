@@ -26,6 +26,8 @@ if (acquireApplicationLock()) {
     createEarlyWindow()
     marks.window = Date.now()
     startSidecarProbe()
+    // Deferred import: startup tasks must not cost the entry module evaluation.
+    void import("./tasks/digest").then((module) => module.runDueDigestTasks())
 
     // The window's renderer is already loading. Its HTML and preloaded chunks are served from this
     // thread, so the bundle waits for that burst to be answered (or a cap) before it evaluates.
