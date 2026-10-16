@@ -1,0 +1,83 @@
+---
+title: "Ember Business Pack"
+---
+
+Ember Business Pack is a ready-to-use analyst workflow for revenue, customer, and growth questions. It combines CRM, billing, analytics, and communication context into one command.
+
+## Included integrations
+
+- CRM MCP: accounts, contacts, pipeline, owners, and lifecycle.
+- Billing MCP: subscriptions, invoices, MRR, churn, payments, and discounts.
+- Analytics MCP: acquisition, activation, retention, cohort, and funnel metrics.
+- Optional communications: email or Slack context for selected accounts.
+
+## Command
+
+Create `.opencode/commands/ember-business.md` in your project or install this pack globally under `~/.config/opencode/commands/`.
+
+```text
+/ember-business What changed in churn this quarter by segment?
+```
+
+The analyst command returns an executive summary, supporting tables, anomalies, confidence, and recommended actions.
+
+## Configuration
+
+Start from this base configuration:
+
+```jsonc title="opencode.jsonc"
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "hubspot": {
+      "type": "remote",
+      "url": "https://mcp.hubspot.com",
+      "headers": {
+        "Authorization": "Bearer hubspot_access_token"
+      }
+    },
+    "stripe": {
+      "type": "remote",
+      "url": "https://mcp.stripe.com",
+      "headers": {
+        "Authorization": "Bearer sk_live_or_test_key"
+      }
+    },
+    "posthog": {
+      "type": "remote",
+      "url": "https://mcp.posthog.com",
+      "headers": {
+        "Authorization": "Bearer phx_replace_me"
+      }
+    }
+  },
+  "commands": {
+    "ember-business": {
+      "template": "Answer this business question using CRM, billing, analytics, and communication context. Return an executive summary, key metrics with freshness, caveats, and recommended actions: $ARGUMENTS",
+      "description": "Analyze revenue, customers, and growth with Ember Business Pack",
+      "agent": "general",
+      "subagent": true
+    }
+  }
+}
+```
+
+## Required setup
+
+- CRM access with at least read-only scope; prefer a dedicated service user or scoped token.
+- Billing access restricted to financial analysts. Use test-mode keys for non-production checks.
+- Analytics access for the workspaces/teams in scope.
+- Review data privacy rules before asking for individual customer details.
+
+## Recommended workflow
+
+1. Start with aggregate questions: MRR, churn, conversion, retention.
+2. Ask for segmentation or owner-level breakdowns.
+3. Ask Ember to identify anomalies and recommend the smallest high-value next action.
+4. Move only approved follow-ups into your CRM, billing, or analytics system.
+
+## Safety notes
+
+- Treat generated summaries as analysis, not official financial reporting.
+- Do not route confidential customer data to shared channels unless approved.
+- Keep production billing credentials out of test machines.
