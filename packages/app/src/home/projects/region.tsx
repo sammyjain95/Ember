@@ -42,6 +42,7 @@ export function HomeProjects(props: {
       onClearNotifications={props.projects.project.clearNotifications}
       onCloseProject={props.projects.project.close}
       onOpenSettings={props.projects.utility.settings}
+      onOpenSpend={props.projects.utility.spend}
       onOpenHelp={props.projects.utility.help}
     />
   )

@@ -7,7 +7,7 @@ const changelog = `# Changelog
 
 ### Highlights
 
-- **Built-In Worktree Tools**: Use \`worktree_create\`. ([#53981](https://github.com/anomalyco/opencode/pull/53981))
+- **Built-In Worktree Tools**: Use \`worktree_create\`. ([#53981](https://github.com/sammyjain95/Ember/pull/53981))
 
 ### Core
 
@@ -105,7 +105,7 @@ describe("loadSource", () => {
     const ctx = { waitUntil: (promise: Promise<unknown>) => void waits.push(promise) }
     expect(await loadSource(ctx, cache)).toBe(changelog)
     expect(await loadSource(ctx, cache)).toBe(changelog)
-    expect(calls).toEqual(["https://raw.githubusercontent.com/anomalyco/opencode/dev/CHANGELOG.md"])
+    expect(calls).toEqual(["https://raw.githubusercontent.com/sammyjain95/Ember/dev/CHANGELOG.md"])
     expect(waits).toHaveLength(0)
   })
 

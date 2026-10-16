@@ -1,6 +1,6 @@
 import { Marked, type Tokens } from "marked"
 
-const REPO_URL = "https://github.com/anomalyco/opencode"
+const REPO_URL = "https://github.com/sammyjain95/Ember"
 
 export type ChangelogEntry = {
   tag: string

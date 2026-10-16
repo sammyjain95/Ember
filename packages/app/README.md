@@ -71,7 +71,7 @@ Environment options:
 
 ## Deployment
 
-The `deploy` GitHub Actions workflow uses SST to deploy the web app from these branches in `anomalyco/opencode`:
+The `deploy` GitHub Actions workflow uses SST to deploy the web app from these branches in `sammyjain95/Ember`:
 
 | Branch       | Site                  |
 | ------------ | --------------------- |

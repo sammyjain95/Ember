@@ -5,7 +5,12 @@ import { createHomeController } from "./model"
 import { createHomeProjectsController } from "./projects/controller"
 import { HomeUtilityNav } from "./projects/view"
 import { HomeProjects } from "./projects/region"
+import { HomeTokenUsage } from "./token-usage"
 import { createHomeScrollController } from "./scroll"
+import { ServerProvider } from "@/runtime/server/current"
+import { useServers } from "@/runtime/server/registry"
+import { ServerConnection } from "@/runtime/server/registry"
+
 import { createHomeSessionSearchController } from "./sessions/search"
 import { createHomeSessionsController } from "./sessions/controller"
 import { HomeSessions } from "./sessions/region"
@@ -17,6 +22,10 @@ export function Home() {
   const sessions = createHomeSessionsController(home)
   const search = createHomeSessionSearchController(home, sessions)
   const scroll = createHomeScrollController(sessions.data.groups)
+  const servers = useServers()
+  const focusedConn =
+    servers.visible.find((conn) => ServerConnection.key(conn) === home.selection.value().server) ??
+    servers.visible[0]
 
   return (
     <div
@@ -48,13 +57,21 @@ export function Home() {
           <Show when={!mobile()}>
             <HomeProjects projects={projects} scroll={scroll} />
           </Show>
-          <HomeSessions sessions={sessions} search={search} scroll={scroll} />
+          <div class="flex min-h-0 flex-col gap-4">
+            {focusedConn && (
+              <ServerProvider conn={focusedConn}>
+                <HomeTokenUsage />
+              </ServerProvider>
+            )}
+            <HomeSessions sessions={sessions} search={search} scroll={scroll} />
+          </div>
         </div>
       </ScrollView>
       <div class="hidden shrink-0 px-3 py-2 md:block lg:hidden">
         <HomeUtilityNav
           class="flex"
           onOpenSettings={projects.utility.settings}
+          onOpenSpend={projects.utility.spend}
           onOpenHelp={projects.utility.help}
           language={projects.copy.language}
         />

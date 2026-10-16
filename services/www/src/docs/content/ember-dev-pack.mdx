@@ -1,0 +1,75 @@
+---
+title: "Ember Dev Pack"
+---
+
+Ember Dev Pack is a ready-to-use reviewer workflow for pull requests. It combines GitHub, Linear, repository documentation, and browser evidence behind one command.
+
+## Included integrations
+
+- GitHub MCP: pull request, issue, review, and repository context.
+- Linear MCP: linked issues, triage, and follow-up proposals.
+- Docs search: repository and project documentation context.
+- Browser tooling: screenshots, page inspection, and UI evidence collection.
+
+## Command
+
+Create `.opencode/commands/ember-review.md` in your project or install this pack into `~/.config/opencode/commands/`.
+
+```text
+/ember-review owner/repo#123
+```
+
+The review command produces a risk-first review and an optional list of Linear follow-ups.
+
+## Configuration
+
+Start from this base configuration:
+
+```jsonc title="opencode.jsonc"
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "github": {
+      "type": "local",
+      "command": [
+        "npx",
+        "-y",
+        "@modelcontextprotocol/server-github"
+      ],
+      "environment": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "ghp_replace_me"
+      }
+    },
+    "linear": {
+      "type": "remote",
+      "url": "https://api.linear.app/mcp",
+      "headers": {
+        "Authorization": "Bearer lin_api_replace_me"
+      }
+    }
+  },
+  "commands": {
+    "ember-review": {
+      "template": "Review $ARGUMENTS professionally. Use GitHub, Linear, docs, and browser evidence. Return blocking issues first.",
+      "description": "Review a pull request with Ember Dev Pack",
+      "agent": "plan",
+      "subagent": true
+    }
+  }
+}
+```
+
+## Required setup
+
+- A GitHub token with repository read permissions.
+- A Linear API token if you want issue linkage or follow-up proposals.
+- Restart Ember after adding or changing MCP servers.
+
+## Recommended workflow
+
+1. Run `/ember-review owner/repo#123`.
+2. Let Ember gather the PR diff and linked issues.
+3. Review the blocking issues and suggested comments.
+4. Ask Ember to post approved review comments or draft Linear follow-ups.
+
+Treat any generated "approved for merge" recommendation as a review aid, not a substitute for human approval.

@@ -4,10 +4,10 @@
   "version": "2.0.30",
   "type": "module",
   "license": "MIT",
-  "homepage": "https://opencode.ai",
+  "homepage": "https://auralys.ai",
   "author": {
-    "name": "OpenCode",
-    "email": "hello@opencode.ai"
+    "name": "Auralys AI",
+    "email": "hello@auralys.ai"
   },
   "scripts": {
     "typecheck": "tsgo -b",

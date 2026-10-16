@@ -4,6 +4,7 @@ import { app } from "electron"
 import { acquireApplicationLock, configureApplication } from "./lifecycle/configure"
 import { startSidecarProbe } from "./service/sidecar-probe"
 import { registerStorageSnapshotHandler } from "./storage/snapshot"
+import { registerValidateProviderKeyHandler } from "./validation/provider-key"
 import { createEarlyWindow } from "./windows/early"
 import { rendererAssetsServed } from "./windows/protocol"
 import { registerRendererScheme } from "./windows/scheme"
@@ -21,9 +22,12 @@ if (acquireApplicationLock()) {
   void app.whenReady().then(async () => {
     marks.ready = Date.now()
     registerStorageSnapshotHandler()
+    registerValidateProviderKeyHandler()
     createEarlyWindow()
     marks.window = Date.now()
     startSidecarProbe()
+    // Deferred import: startup tasks must not cost the entry module evaluation.
+    void import("./tasks/digest").then((module) => module.runDueDigestTasks())
 
     // The window's renderer is already loading. Its HTML and preloaded chunks are served from this
     // thread, so the bundle waits for that burst to be answered (or a cap) before it evaluates.

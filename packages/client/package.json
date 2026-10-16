@@ -6,7 +6,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/anomalyco/opencode.git",
+    "url": "git+https://github.com/sammyjain95/Ember.git",
     "directory": "packages/client"
   },
   "publishConfig": {
