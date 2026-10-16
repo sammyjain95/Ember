@@ -1,7 +1,7 @@
 import { anchor, parseChangelog, renderEntry } from "./markdown"
 import { renderPage, type PageState } from "./page"
 
-const SOURCE_URL = "https://raw.githubusercontent.com/anomalyco/opencode/dev/CHANGELOG.md"
+const SOURCE_URL = "https://raw.githubusercontent.com/sammyjain95/Ember/dev/CHANGELOG.md"
 
 // Fresh for five minutes, then served stale for up to a day while requests revalidate it in the background. A failed
 // revalidation keeps serving the stale copy, so a GitHub outage only shows an error once the day-old copy is evicted.

@@ -2,7 +2,7 @@ import { escape, type ChangelogEntry } from "./markdown"
 import { style } from "./style"
 
 const SITE = "https://opencode.ai"
-const REPO = "https://github.com/anomalyco/opencode"
+const REPO = "https://github.com/sammyjain95/Ember"
 export const CHANGELOG_FILE_URL = `${REPO}/blob/dev/CHANGELOG.md`
 
 const logo =
