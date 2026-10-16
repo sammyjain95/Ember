@@ -49,6 +49,13 @@ Start from this base configuration:
       "headers": {
         "Authorization": "Bearer phx_replace_me"
       }
+    },
+    "gmail": {
+      "type": "remote",
+      "url": "https://gmail.mcp.example.com",
+      "headers": {
+        "Authorization": "Bearer gmail_token"
+      }
     }
   },
   "commands": {
@@ -62,7 +69,31 @@ Start from this base configuration:
 }
 ```
 
-## Required setup
+## Optional Gmail connection
+
+Use Gmail only when communications context is necessary. Keep the server scoped to read-only mailbox access for the inbox and labels relevant to the user.
+
+```jsonc title="opencode.jsonc"
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "gmail": {
+      "type": "remote",
+      "url": "https://gmail.mcp.example.com",
+      "headers": {
+        "Authorization": "Bearer gmail_token"
+      }
+    }
+  }
+}
+```
+
+Notes:
+
+- Prefer OAuth over long-lived bearer tokens.
+- Use a dedicated, least-privilege Gmail integration account if possible.
+- Summarize message content instead of copying full threads.
+- Do not auto-forward or reply unless the user explicitly asks and policy permits it.
 
 - CRM access with at least read-only scope; prefer a dedicated service user or scoped token.
 - Billing access restricted to financial analysts. Use test-mode keys for non-production checks.
