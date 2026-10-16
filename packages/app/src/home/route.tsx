@@ -5,7 +5,9 @@ import { createHomeController } from "./model"
 import { createHomeProjectsController } from "./projects/controller"
 import { HomeUtilityNav } from "./projects/view"
 import { HomeProjects } from "./projects/region"
+import { HomeTokenUsage } from "./token-usage"
 import { createHomeScrollController } from "./scroll"
+
 import { createHomeSessionSearchController } from "./sessions/search"
 import { createHomeSessionsController } from "./sessions/controller"
 import { HomeSessions } from "./sessions/region"
@@ -48,7 +50,10 @@ export function Home() {
           <Show when={!mobile()}>
             <HomeProjects projects={projects} scroll={scroll} />
           </Show>
-          <HomeSessions sessions={sessions} search={search} scroll={scroll} />
+          <div class="flex min-h-0 flex-col gap-4">
+            <HomeTokenUsage />
+            <HomeSessions sessions={sessions} search={search} scroll={scroll} />
+          </div>
         </div>
       </ScrollView>
       <div class="hidden shrink-0 px-3 py-2 md:block lg:hidden">
