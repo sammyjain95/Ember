@@ -302,6 +302,40 @@ const Root = Spec.make(typeof OPENCODE_CLI_NAME === "string" ? OPENCODE_CLI_NAME
         }),
       ],
     }),
+    Spec.make("skill", {
+      description: "Manage skills",
+      commands: [
+        Spec.make("list", {
+          description: "List configured skills",
+          params: {
+            global: Flag.Boolean("global").pipe(
+              Flag.withDescription("Use the global config file"),
+              Flag.withDefault(false),
+            ),
+          },
+        }),
+        Spec.make("add", {
+          description: "Add a skill directory or SKILL.md file to the configuration",
+          params: {
+            path: Argument.String("path").pipe(Argument.withDescription("Path to a skill directory or SKILL.md file")),
+            global: Flag.Boolean("global").pipe(
+              Flag.withDescription("Use the global config file"),
+              Flag.withDefault(false),
+            ),
+          },
+        }),
+        Spec.make("remove", {
+          description: "Remove a skill from the configuration",
+          params: {
+            path: Argument.String("path").pipe(Argument.withDescription("Path of a configured skill")),
+            global: Flag.Boolean("global").pipe(
+              Flag.withDescription("Use the global config file"),
+              Flag.withDefault(false),
+            ),
+          },
+        }),
+      ],
+    }),
     Spec.make("models", {
       description: "List all available models",
       params: ServerParams,
