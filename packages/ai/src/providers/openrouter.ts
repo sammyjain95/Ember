@@ -3,10 +3,12 @@ import { Route, type RouteDefaultsInput } from "../route/client.js"
 import { Endpoint } from "../route/endpoint.js"
 import { Protocol } from "../route/protocol.js"
 import { AuthOptions, type ProviderAuthOption } from "../route/auth-options.js"
+import { MediaRoute } from "../route/media.js"
 import { HttpOptions, ProviderID, type ModelID, type OpenString } from "../schema/index.js"
 import type { ProviderPackage } from "../provider-package.js"
 import { SystemOne } from "../experimental/system-one.js"
 import { OpenAIChat } from "../protocols/openai-chat.js"
+import { OpenRouterSpeech } from "../protocols/openrouter-speech.js"
 import { cacheControl } from "../protocols/utils/cache.js"
 import { isRecord, ProviderShared } from "../protocols/shared.js"
 
@@ -193,10 +195,13 @@ export const configure = (input: LanguageModelOptions = {}) => {
       headers: input.headers,
       http: HttpOptions.make(input.http),
     })
+  const speechDeployment = MediaRoute.deployment(input, AuthOptions.bearer(input, "OPENROUTER_API_KEY"))
+  const speech = (modelID: string | ModelID) => OpenRouterSpeech.model({ ...speechDeployment, id: modelID })
   return {
     id,
     model: (modelID: string | ModelID) =>
       route.model<OpenRouterProviderOptionsInput>({ id: modelID, compatibility: { supportsPromptCacheKey: true } }),
+    speech,
     experimental: { evaluation },
     configure,
   }
@@ -204,6 +209,7 @@ export const configure = (input: LanguageModelOptions = {}) => {
 
 export const provider = configure()
 export const experimental = provider.experimental
+export const speech = provider.speech
 export const model: ProviderPackage.Definition<Settings, OpenRouterProviderOptionsInput>["model"] = (
   modelID,
   { apiKey, baseURL, body, headers, ...providerOptions },

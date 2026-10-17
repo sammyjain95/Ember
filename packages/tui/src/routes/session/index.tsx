@@ -88,6 +88,7 @@ import { DialogExportResult } from "../../ui/dialog-export-result"
 import { sessionEpilogue } from "../../util/presentation"
 import { useConfig } from "../../config"
 import { useClipboard } from "../../context/clipboard"
+import { playAudio } from "../../speech"
 import { nextThinkingMode, type ThinkingMode } from "../../context/thinking"
 import { getScrollAcceleration } from "../../util/scroll"
 import { collapseShellOutput, collapseToolOutput } from "../../util/collapse-tool-output"
@@ -900,6 +901,26 @@ export function Session(props: {
     },
   ]
 
+  const lastAssistantText = (): string | undefined => {
+    const lastAssistantMessage = messagesBeforeRevert().findLast(
+      (msg): msg is SessionMessageAssistant => msg.type === "assistant",
+    )
+    if (!lastAssistantMessage) {
+      toast.show({ message: "No assistant messages found", variant: "error" })
+      return undefined
+    }
+    const text = lastAssistantMessage.content
+      .filter((part) => part.type === "text")
+      .map((part) => part.text)
+      .join("\n")
+      .trim()
+    if (!text) {
+      toast.show({ message: "No text content found in last assistant message", variant: "error" })
+      return undefined
+    }
+    return text
+  }
+
   const baseCommands = createMemo(() => [
     {
       title: "Rename session",
@@ -1169,6 +1190,36 @@ export function Session(props: {
           .then(() => toast.show({ message: "Message copied to clipboard!", variant: "success" }))
           .catch(() => toast.show({ message: "Failed to copy to clipboard", variant: "error" }))
         dialog.clear()
+      },
+    },
+    {
+      title: "Speak last assistant message",
+      id: "messages.speak",
+      group: "Session",
+      slash: { name: "speak", arguments: true as const },
+      run: (input?: string) => {
+        const text = input?.trim() || lastAssistantText()
+        if (!text) {
+          dialog.clear()
+          return
+        }
+        void (async () => {
+          let audio: { audio: unknown; mediaType: string }
+          try {
+            audio = await client.api.speech.generate({ text })
+          } catch {
+            toast.show({ message: "Failed to generate speech", variant: "error" })
+            dialog.clear()
+            return
+          }
+          const bytes = typeof audio.audio === "string" ? Buffer.from(audio.audio, "base64") : audio.audio
+          try {
+            await playAudio(bytes as Uint8Array, audio.mediaType)
+          } catch {
+            toast.show({ message: "Failed to play speech audio", variant: "error" })
+          }
+          dialog.clear()
+        })()
       },
     },
     {

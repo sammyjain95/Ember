@@ -259,7 +259,7 @@ const resolveCatalogModel = Effect.fn("ModelResolver.resolveCatalogModel")(funct
   })
 })
 
-function prepareRuntimeModel(model: RuntimeInfo) {
+export function prepareRuntimeModel(model: RuntimeInfo) {
   if (model.settings?.apiKey !== "") return model
   return { ...model, settings: Struct.omit(model.settings, ["apiKey"]) }
 }
@@ -274,7 +274,7 @@ function validateProviderVariables(
   return failure ? Effect.fail(failure) : Effect.succeed(resolved)
 }
 
-function prepareProviderSettings(
+export function prepareProviderSettings(
   model: RuntimeInfo,
   settings: Readonly<Record<string, unknown>>,
 ): Effect.Effect<Readonly<Record<string, unknown>>, UnresolvedProviderVariablesError> {
@@ -305,7 +305,7 @@ function unresolvedProviderVariables(model: RuntimeInfo, baseURL: string) {
   })
 }
 
-const nativeCredentialSettings = (model: RuntimeInfo, specifier: string, credential: Credential.Value | undefined) => {
+export const nativeCredentialSettings = (model: RuntimeInfo, specifier: string, credential: Credential.Value | undefined) => {
   if (!credential) return {}
   if (credential.type === "key") return { apiKey: credential.key }
   if (credential.type === "oauth") return tokenSettings(specifier, credential.access)
@@ -345,7 +345,7 @@ const initialization = (model: RuntimeInfo, phase: InitializationPhase, cause: u
   })
 
 // Unexpected throws still carry the most useful diagnosis in their message; a stack or an unknown value does not.
-const causeMessage = (cause: unknown): string | undefined => {
+export const causeMessage = (cause: unknown): string | undefined => {
   if (typeof cause === "string") return cause.trim() || undefined
   if (!(cause instanceof globalThis.Error)) return undefined
   const message = cause.message.trim()

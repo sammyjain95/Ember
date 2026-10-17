@@ -106,6 +106,14 @@ story("renders a completed write through the production file component", async (
   await expect(write.locator('[data-component="file"]')).toContainText("export const written = true")
 })
 
+story("reads an assistant response through the speak action", async ({ mount }) => {
+  const timeline = await mount("current-session-timeline-rows--conversation", { args: { scenario: "interruption" } })
+  const actions = timeline.locator('[data-slot="text-part-copy-wrapper"]')
+  await actions.locator("..").hover()
+  await actions.getByRole("button", { name: "Speak", exact: true }).click()
+  await expect(timeline.getByText(/^Story action: Spoke \d+ characters$/)).toBeVisible()
+})
+
 // Moved from packages/app/e2e/regression/session-timeline-file-state.spec.ts
 story("keeps patch file disclosures independent", async ({ mount }) => {
   const timeline = await mount("current-session-file-changes--changing-files", { args: { scenario: "patch" } })

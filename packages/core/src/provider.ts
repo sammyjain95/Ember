@@ -4,7 +4,7 @@ import { Context, Effect, Layer, Option, Schema, Stream, Struct } from "effect"
 import { Provider } from "@opencode/schema/provider"
 import { Model } from "@opencode/schema/model"
 import { makeLocationNode } from "@opencode/util/effect/app-node"
-import { HttpTimeout, type ProviderPackageDefinition } from "@opencode/ai"
+import { HttpTimeout, type ProviderPackageDefinition, type ProviderPackageSettings, type SpeechModel } from "@opencode/ai"
 import { isRecord } from "@opencode/ai/utils/record"
 import { Npm } from "@opencode/util/npm"
 import type { DeepMutable } from "./schema.js"
@@ -43,6 +43,11 @@ export class LoadError extends Schema.TaggedError<LoadError>()("Provider.LoadErr
   cause: Schema.Defect(),
 }) {}
 export type ProviderPackage = ProviderPackageDefinition
+
+/** Provider entrypoints exposing text-to-speech construction via `speech(modelID, settings)`. */
+export interface SpeechPackageDefinition {
+  readonly speech: (modelID: string, settings: ProviderPackageSettings) => SpeechModel
+}
 
 const packages = new Map<string, Promise<unknown>>()
 const builtins = new Map<string, () => Promise<unknown>>([
@@ -155,9 +160,25 @@ const builtins = new Map<string, () => Promise<unknown>>([
 export const builtinPackages: ReadonlySet<string> = new Set(builtins.keys())
 
 export const loadPackage = Effect.fn("Provider.loadPackage")(function* (input: string, npm?: Npm.Interface) {
+  const resolved = yield* resolvePackageEntrypoint(input, npm)
+  return yield* importPackage(resolved.specifier, resolved.entrypoint, resolved.load)
+})
+
+export const loadSpeechPackage = Effect.fn("Provider.loadSpeechPackage")(function* (
+  input: string,
+  npm?: Npm.Interface,
+) {
+  const resolved = yield* resolvePackageEntrypoint(input, npm)
+  return yield* importSpeechPackage(resolved.specifier, resolved.entrypoint, resolved.load)
+})
+
+const resolvePackageEntrypoint = Effect.fn("Provider.resolvePackageEntrypoint")(function* (
+  input: string,
+  npm?: Npm.Interface,
+) {
   const specifier = packageName(input)
   const builtin = builtins.get(specifier)
-  if (builtin) return yield* importPackage(specifier, specifier, builtin)
+  if (builtin) return { specifier, entrypoint: specifier, load: builtin }
   const resolved = yield* Effect.sync(() => {
     if (specifier.startsWith("file://") || specifier.startsWith("@opencode/ai/")) return specifier
     try {
@@ -166,7 +187,7 @@ export const loadPackage = Effect.fn("Provider.loadPackage")(function* (input: s
       return undefined
     }
   })
-  if (resolved) return yield* importPackage(specifier, resolved)
+  if (resolved) return { specifier, entrypoint: resolved }
   if (!npm) {
     return yield* new LoadError({
       package: specifier,
@@ -180,7 +201,7 @@ export const loadPackage = Effect.fn("Provider.loadPackage")(function* (input: s
     try: () => resolveModule(specifier, installed.directory),
     catch: (cause) => new LoadError({ package: specifier, cause }),
   })
-  return yield* importPackage(specifier, entrypoint)
+  return { specifier, entrypoint }
 })
 
 /** opencode settings consumed in Core; native packages never receive them. */
@@ -512,7 +533,33 @@ const importPackage = Effect.fn("Provider.importPackage")(function* (
   entrypoint: string,
   load = () => importModule(entrypoint),
 ) {
-  const module = yield* Effect.tryPromise({
+  const module = yield* loadModule(specifier, entrypoint, load)
+  if (typeof module !== "object" || module === null || typeof (module as { model?: unknown }).model !== "function") {
+    return yield* new LoadError({
+      package: specifier,
+      cause: new Error(`Provider package ${specifier} does not export model(modelID, settings)`),
+    })
+  }
+  return module as ProviderPackageDefinition
+})
+
+const importSpeechPackage = Effect.fn("Provider.importSpeechPackage")(function* (
+  specifier: string,
+  entrypoint: string,
+  load = () => importModule(entrypoint),
+) {
+  const module = yield* loadModule(specifier, entrypoint, load)
+  if (typeof module !== "object" || module === null || typeof (module as { speech?: unknown }).speech !== "function") {
+    return yield* new LoadError({
+      package: specifier,
+      cause: new Error(`Provider package ${specifier} does not export speech(modelID, settings)`),
+    })
+  }
+  return module as SpeechPackageDefinition
+})
+
+const loadModule = (specifier: string, entrypoint: string, load: () => Promise<unknown>) =>
+  Effect.tryPromise({
     try: () => {
       const existing = packages.get(entrypoint)
       if (existing) return existing
@@ -522,11 +569,3 @@ const importPackage = Effect.fn("Provider.importPackage")(function* (
     },
     catch: (cause) => new LoadError({ package: specifier, cause }),
   })
-  if (typeof module !== "object" || module === null || typeof (module as { model?: unknown }).model !== "function") {
-    return yield* new LoadError({
-      package: specifier,
-      cause: new Error(`Provider package ${specifier} does not export model(modelID, settings)`),
-    })
-  }
-  return module as ProviderPackageDefinition
-})

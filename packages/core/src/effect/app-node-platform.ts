@@ -1,4 +1,5 @@
 import { LLMClient, RequestExecutor } from "@opencode/ai/route"
+import { SpeechClient } from "@opencode/ai"
 import { Effect, Layer } from "effect"
 import { FetchHttpClient, HttpClient } from "effect/http"
 import { Socket } from "effect/socket"
@@ -25,6 +26,12 @@ export const requestExecutor = makeGlobalNode({
 })
 
 export const llmClient = makeGlobalNode({ service: LLMClient.Service, layer: LLMClient.layer, deps: [requestExecutor] })
+
+export const speechClient = makeGlobalNode({
+  service: SpeechClient.Service,
+  layer: SpeechClient.layer,
+  deps: [requestExecutor],
+})
 
 export const webSocketConstructor = makeGlobalNode({
   service: Socket.WebSocketConstructor,

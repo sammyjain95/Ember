@@ -115,6 +115,8 @@ import type {
   ModelDefaultOutput,
   GenerateTextInput,
   GenerateTextOutput,
+  SpeechGenerateInput,
+  SpeechGenerateOutput,
   ProviderListInput,
   ProviderListOutput,
   ProviderGetInput,
@@ -862,6 +864,18 @@ const EndpointGenerateText = (raw: RawClient["server.generate"]) => (input: Gene
   )
 
 const adaptGroupGenerate = (raw: RawClient["server.generate"]) => ({ text: EndpointGenerateText(raw) })
+
+const EndpointSpeechGenerate = (raw: RawClient["server.speech"]) => (input: SpeechGenerateInput) =>
+  preserveEffect<SpeechGenerateOutput>()(
+    raw["speech.generate"]({
+      payload: { text: input["text"], voice: input["voice"], format: input["format"], model: input["model"] },
+    }).pipe(
+      Effect.mapError(mapClientError),
+      Effect.map((value) => value.data),
+    ),
+  )
+
+const adaptGroupSpeech = (raw: RawClient["server.speech"]) => ({ generate: EndpointSpeechGenerate(raw) })
 
 const EndpointProviderList = (raw: RawClient["server.provider"]) => (input?: ProviderListInput) =>
   preserveEffect<ProviderListOutput>()(
@@ -1616,6 +1630,7 @@ const adaptClient = (raw: RawClient) => ({
   message: adaptGroupMessage(raw["server.message"]),
   model: adaptGroupModel(raw["server.model"]),
   generate: adaptGroupGenerate(raw["server.generate"]),
+  speech: adaptGroupSpeech(raw["server.speech"]),
   provider: adaptGroupProvider(raw["server.provider"]),
   integration: adaptGroupIntegration(raw["server.integration"]),
   mcp: adaptGroupMcp(raw["server.mcp"]),

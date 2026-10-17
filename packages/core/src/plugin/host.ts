@@ -32,6 +32,7 @@ import { WebSearch } from "../websearch.js"
 import { Worktree } from "../worktree.js"
 import { WorktreeStrategies } from "../worktree/strategies.js"
 import { Generate } from "../generate.js"
+import { Speech } from "../speech.js"
 import { Permission } from "../permission.js"
 import { PluginHooks } from "./hooks.js"
 import type { Interface } from "../plugin.js"
@@ -612,6 +613,7 @@ export const requirements = LayerNode.group([
   Worktree.node,
   WorktreeStrategies.node,
   Generate.node,
+  Speech.node,
   Permission.node,
   PluginHooks.node,
   Session.node,

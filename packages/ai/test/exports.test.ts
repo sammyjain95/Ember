@@ -193,6 +193,10 @@ describe("public exports", () => {
     expect(ElevenLabs.configure({ apiKey: "fixture" }).speech("eleven_flash_v2_5").route.id).toBe("elevenlabs-speech")
     expect(Cartesia.configure({ apiKey: "fixture" }).speech("sonic-3").route.id).toBe("cartesia-speech")
     expect(Deepgram.configure({ apiKey: "fixture" }).speech("aura-2-thalia-en").route.id).toBe("deepgram-speech")
+    expect(OpenRouter.configure({ apiKey: "fixture" }).speech("fish-audio/s2.1-pro-free").route.id).toBe(
+      "openrouter-speech",
+    )
+    expect(OpenRouter.provider.speech).toBe(OpenRouter.speech)
     expect(OpenAI.configure({ apiKey: "fixture" }).transcription("gpt-transcribe").route.kind).toBe("stream")
     expect(Google.configure({ apiKey: "fixture" }).transcription("gemini-3.5-transcribe").route.kind).toBe("stream")
     expect(Deepgram.configure({ apiKey: "fixture" }).transcription("nova-3").route.kind).toBe("inline")

@@ -86,7 +86,7 @@ function modelLabel(
 
 function MessageActionButton(
   props: Pick<ComponentProps<"button">, "disabled" | "onMouseDown" | "onClick" | "aria-label"> & {
-    icon: "check" | "copy" | "reset" | "arrow-down-to-line" | "outline-trash"
+    icon: "check" | "copy" | "reset" | "arrow-down-to-line" | "outline-trash" | "volume"
     label: JSX.Element
   },
 ) {
@@ -674,6 +674,7 @@ export function AssistantTextContent(props: {
   message: SessionMessageAssistant
   showCopy: boolean
   turnDurationMs?: number | null
+  onSpeak?: (text: string) => void
 }) {
   const data = useData()
   const i18n = useI18n()
@@ -741,6 +742,15 @@ export function AssistantTextContent(props: {
         </div>
         <Show when={props.showCopy}>
           <div data-slot="text-part-copy-wrapper" data-interrupted={interrupted() ? "" : undefined}>
+            <Show when={props.onSpeak}>
+              <MessageActionButton
+                icon="volume"
+                label={i18n.t("ui.message.speak")}
+                onMouseDown={(event) => event.preventDefault()}
+                onClick={() => props.onSpeak?.(props.text)}
+                aria-label={i18n.t("ui.message.speak")}
+              />
+            </Show>
             <MessageActionButton
               icon={copied() ? "check" : "copy"}
               label={copied() ? i18n.t("ui.message.copied") : i18n.t("ui.message.copyResponse")}
