@@ -91,6 +91,9 @@ export function CurrentSessionTimelineStory(props: {
     revert: (input) => {
       setActivity(`Selected revert boundary ${input.messageID}`)
     },
+    speak: (input) => {
+      setActivity(`Spoke ${input.text.length} characters`)
+    },
   } satisfies SessionUserActions
 
   const reset = () => {

@@ -27,6 +27,8 @@ export type SessionUserAttachmentReference = {
 
 export type SessionUserActions = {
   openAttachment?: (file: PromptFileAttachment) => void
+  /** Read an assistant response aloud using the server's configured speech model. */
+  speak?: (input: { text: string }) => Promise<void> | void
   revert?: (input: { sessionID: string; messageID: string }) => Promise<void> | void
   /**
    * An input the server has not delivered yet. Like the TUI, a pending steer can move to the queue or be deleted;

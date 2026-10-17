@@ -174,6 +174,8 @@ export type MoneyUSDPerMillionTokens = number
 
 export type GenerateTextResponse = { data: { text: string } }
 
+export type SpeechGenerateResponse = { data: { audio: globalThis.Uint8Array; mediaType: string } }
+
 export type IntegrationID = string
 
 export type IntegrationMethodID = string
@@ -2199,6 +2201,11 @@ export type ConfigEntry =
             }
         media?: {
           image?: { auto_resize?: boolean; max_width?: number; max_height?: number; max_base64_bytes?: number }
+        }
+        speech?: {
+          model?: string | { providerID: string; model: string; variant?: string }
+          voice?: string
+          format?: string
         }
         tool_output?: { max_lines?: number; max_bytes?: number }
         mcp?: {
@@ -5768,6 +5775,35 @@ export type GenerateTextInput = {
 }
 
 export type GenerateTextOutput = GenerateTextResponse["data"]
+
+export type SpeechGenerateInput = {
+  readonly text: {
+    readonly text: string
+    readonly voice?: string | null
+    readonly format?: string | null
+    readonly model?: { readonly id: string; readonly providerID: string; readonly variant?: string } | null
+  }["text"]
+  readonly voice?: {
+    readonly text: string
+    readonly voice?: string | null
+    readonly format?: string | null
+    readonly model?: { readonly id: string; readonly providerID: string; readonly variant?: string } | null
+  }["voice"]
+  readonly format?: {
+    readonly text: string
+    readonly voice?: string | null
+    readonly format?: string | null
+    readonly model?: { readonly id: string; readonly providerID: string; readonly variant?: string } | null
+  }["format"]
+  readonly model?: {
+    readonly text: string
+    readonly voice?: string | null
+    readonly format?: string | null
+    readonly model?: { readonly id: string; readonly providerID: string; readonly variant?: string } | null
+  }["model"]
+}
+
+export type SpeechGenerateOutput = SpeechGenerateResponse["data"]
 
 export type ProviderListInput = {
   readonly location?: { readonly location?: { readonly directory?: string | undefined } | undefined }["location"]

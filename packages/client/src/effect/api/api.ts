@@ -1402,6 +1402,19 @@ export interface GenerateApi<E = never> {
   readonly text: GenerateTextOperation<E>
 }
 
+export type SpeechGenerateInput = {
+  readonly text: string
+  readonly voice?: string | undefined
+  readonly format?: string | undefined
+  readonly model?: Model.Ref | undefined
+}
+export type SpeechGenerateOutput = { readonly audio: globalThis.Uint8Array; readonly mediaType: string }
+export type SpeechGenerateOperation<E = never> = (input: SpeechGenerateInput) => Effect.Effect<SpeechGenerateOutput, E>
+
+export interface SpeechApi<E = never> {
+  readonly generate: SpeechGenerateOperation<E>
+}
+
 export type ProviderListInput = { readonly location?: { readonly directory?: string | undefined } | undefined }
 export type ProviderListOutput = { readonly location: Location.PublicRef; readonly data: ReadonlyArray<Provider.Info> }
 export type ProviderListOperation<E = never> = (input?: ProviderListInput) => Effect.Effect<ProviderListOutput, E>
@@ -2272,6 +2285,7 @@ export interface AppApi<E = never> {
   readonly message: MessageApi<E>
   readonly model: ModelApi<E>
   readonly generate: GenerateApi<E>
+  readonly speech: SpeechApi<E>
   readonly provider: ProviderApi<E>
   readonly integration: IntegrationApi<E>
   readonly mcp: McpApi<E>

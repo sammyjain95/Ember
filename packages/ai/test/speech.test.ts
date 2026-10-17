@@ -2,9 +2,9 @@ import { describe, expect } from "bun:test"
 import { Effect, Layer, Stream } from "effect"
 import { Base64 } from "effect/encoding"
 import { Speech, SpeechClient, SpeechEvent } from "../src/index.js"
-import { Cartesia, Deepgram, ElevenLabs, Google, OpenAI } from "../src/providers.js"
+import { Cartesia, Deepgram, ElevenLabs, Google, OpenAI, OpenRouter } from "../src/providers.js"
 import { it } from "./lib/effect.js"
-import { dynamicResponse } from "./lib/http.js"
+import { dynamicResponse, observe, type Call } from "./lib/http.js"
 import { sseEvents } from "./lib/sse.js"
 
 // Recorded tests in test/provider cover lowering and decoding; these cover what recordings cannot.
@@ -36,6 +36,9 @@ const google38Lite = Google.configure({ apiKey: "test", baseURL: "https://google
   "gemini-3.8-flash-lite-tts",
 )
 const deepgram = Deepgram.configure({ apiKey: "test", baseURL: "https://deepgram.test" }).speech("aura-2-thalia-en")
+const openrouter = OpenRouter.configure({ apiKey: "test", baseURL: "https://openrouter.test/api/v1" }).speech(
+  "fish-audio/s2.1-pro-free",
+)
 const voice = "JBFqnCBsd6RMkjVDRZzb"
 
 describe("Speech", () => {
@@ -280,6 +283,84 @@ describe("Speech", () => {
       ])
       const finish = events.find(SpeechEvent.is.finish)
       expect(yield* finish!.audio.bytes()).toEqual(Uint8Array.from([1, 2, 3]))
+    }),
+  )
+
+  it.effect("sends OpenRouter speech as a raw request without stream_format", () =>
+    Effect.gen(function* () {
+      const calls: Array<Call> = []
+      const bytes = Uint8Array.from([1, 2, 3])
+      const response = yield* Speech.generate({ model: openrouter, text: "Hi", voice, format: "mp3" }).pipe(
+        Effect.provide(
+          layer((input) =>
+            Effect.gen(function* () {
+              yield* observe(calls, input)
+              return input.respond(new Blob([bytes]).stream(), { headers: { "content-type": "audio/mpeg" } })
+            }),
+          ),
+        ),
+      )
+      expect(calls).toHaveLength(1)
+      expect(calls[0].url).toBe("https://openrouter.test/api/v1/audio/speech")
+      expect(calls[0].headers.get("authorization")).toBe("Bearer test")
+      expect(JSON.parse(calls[0].body)).toEqual({
+        model: "fish-audio/s2.1-pro-free",
+        input: "Hi",
+        voice,
+        response_format: "mp3",
+      })
+      expect(response.audio.mediaType).toBe("audio/mpeg")
+      expect(yield* response.audio.bytes()).toEqual(bytes)
+    }),
+  )
+
+  it.effect("streams OpenRouter raw audio bodies as deltas without an SSE opt-in", () =>
+    Effect.gen(function* () {
+      const bytes = Uint8Array.from([4, 5, 6])
+      const events = yield* collect(Speech.stream({ model: openrouter, text: "Hi", voice })).pipe(
+        Effect.provide(
+          layer((input) =>
+            Effect.succeed(input.respond(new Blob([bytes]).stream(), { headers: { "content-type": "audio/mpeg" } })),
+          ),
+        ),
+      )
+      expect(events.map((event) => event.type)).toEqual(["audio-delta", "finish"])
+      const finish = events.find(SpeechEvent.is.finish)
+      expect(yield* finish!.audio.bytes()).toEqual(bytes)
+      expect(finish!.audio.mediaType).toBe("audio/mpeg")
+    }),
+  )
+
+  it.effect("parses OpenRouter SSE records only when providerOptions opts in", () =>
+    Effect.gen(function* () {
+      const events = yield* collect(
+        Speech.stream({ model: openrouter, text: "Hi", providerOptions: { stream_format: "sse" } }),
+      ).pipe(
+        Effect.provide(
+          respond(sseEvents({ type: "speech.audio.delta", audio: "AQI=" }, { type: "speech.audio.done" }), "text/event-stream"),
+        ),
+      )
+      expect(events.map((event) => event.type)).toEqual(["audio-delta", "finish"])
+      const finish = events.find(SpeechEvent.is.finish)
+      expect(yield* finish!.audio.bytes()).toEqual(Uint8Array.from([1, 2]))
+    }),
+  )
+
+  it.effect("rejects OpenRouter requests it cannot honor before sending", () =>
+    Effect.gen(function* () {
+      const errors = yield* Effect.all(
+        [
+          Speech.generate({ model: openrouter, text: "Hi", timestamps: true }),
+          Speech.generate({ model: openrouter, text: "Hi", format: "ogg" }),
+        ].map((effect) => Effect.flip(effect)),
+      ).pipe(Effect.provide(layer(() => Effect.die("An unsupported request reached the network"))))
+      expect(errors.map((error) => [error.reason._tag, "operation" in error.reason && error.reason.operation])).toEqual(
+        [
+          ["UnsupportedOperation", "media.timestamps"],
+          ["UnsupportedOperation", "media.format"],
+        ],
+      )
+      expect(errors[0].reason).toMatchObject({ provider: "openrouter", route: "openrouter-speech" })
     }),
   )
 })

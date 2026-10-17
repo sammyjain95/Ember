@@ -1,4 +1,5 @@
 import type { SessionUserActions } from "@opencode/session-ui/message"
+import { base64ToBytes } from "@opencode/util/base64"
 import { getFilename, sameDirectory } from "@opencode/util/path"
 import { useDialog } from "@opencode/ui/context/dialog"
 import { isScrollKeyTarget, scrollKey, scrollKeyOwner } from "@opencode/ui/scroll-view"
@@ -194,6 +195,36 @@ export function createActiveSessionRegion(input: {
     showToast({ title: language.t("common.requestFailed") })
   }
 
+  // One response plays at a time; starting a new one stops any audio still playing.
+  let speaking: HTMLAudioElement | undefined
+
+  const speak: NonNullable<SessionUserActions["speak"]> = async ({ text }) => {
+    try {
+      const result = await server.api.speech.generate({ text })
+      // The promise client returns raw wire JSON, so the base64 field arrives as a string despite its declared type.
+      const bytes = Uint8Array.from(
+        typeof result.audio === "string" ? base64ToBytes(result.audio) : result.audio,
+      )
+      const url = URL.createObjectURL(new Blob([bytes], { type: result.mediaType }))
+
+      speaking?.pause()
+      const audio = new Audio(url)
+      speaking = audio
+
+      const release = () => {
+        URL.revokeObjectURL(url)
+
+        if (speaking === audio) speaking = undefined
+      }
+
+      audio.addEventListener("ended", release, { once: true })
+      audio.addEventListener("error", release, { once: true })
+      await audio.play()
+    } catch {
+      notifyFailed()
+    }
+  }
+
   const pendingSteer: NonNullable<SessionUserActions["pending"]> = {
     status: (messageID) => {
       const sessionID = input.session.identity.params.id
@@ -281,6 +312,7 @@ export function createActiveSessionRegion(input: {
           return pendingSteer
         },
         openAttachment,
+        speak,
       } satisfies SessionUserActions,
     },
     requests: state,

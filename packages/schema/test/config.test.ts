@@ -71,6 +71,21 @@ describe("Config.Entry", () => {
     expect(decode({ websearch: { provider: "random" } }).websearch).toEqual({ provider: "random" })
   })
 
+  test("decodes speech selection short strings and omits the key when absent", () => {
+    const decode = Schema.decodeUnknownSync(Config.Info)
+    const input = { speech: { model: "openrouter/fish-audio-tts", voice: "echo", format: "mp3" } }
+    const decoded = decode(input)
+    expect(decoded.speech?.model?.providerID).toBe(Provider.ID.make("openrouter"))
+    expect(String(decoded.speech?.model?.model)).toBe("fish-audio-tts")
+    expect(decoded.speech?.voice).toBe("echo")
+    expect(decoded.speech?.format).toBe("mp3")
+    expect(Schema.encodeSync(Config.Info)(decoded)).toEqual({
+      speech: { model: { providerID: "openrouter", model: "fish-audio-tts" }, voice: "echo", format: "mp3" },
+    })
+    expect(Schema.encodeSync(Config.Info)(new Config.Info({ speech: undefined }))).not.toHaveProperty("speech")
+    expect(() => decode({ speech: { model: "openrouter" } })).toThrow()
+  })
+
   test("round-trips every configuration entry type", () => {
     const entries = [
       new Config.Document({
