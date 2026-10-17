@@ -1,10 +1,15 @@
-import { Show, createMemo, createResource, For } from "solid-js"
+import { createMemo, createResource, For, Show } from "solid-js"
+import { createStore } from "solid-js/store"
 
 import { useServerSDK } from "@/runtime/server/client"
 import { useLanguage } from "@/runtime/i18n/language"
+import { Icon } from "@opencode/ui/icon"
+import { IconButton } from "@opencode/ui/icon-button"
 
 const compact = new Intl.NumberFormat(undefined, { notation: "compact", maximumFractionDigits: 1 })
 const money = new Intl.NumberFormat(undefined, { style: "currency", currency: "USD", maximumFractionDigits: 2 })
+
+const MAX_COLLAPSED_MODELS = 6
 
 interface TokenTotals {
   input?: unknown
@@ -42,6 +47,7 @@ interface ModelEntry {
 export function HomeTokenUsage() {
   const sdk = useServerSDK()
   const language = useLanguage()
+  const [state, setState] = createStore({ expanded: false })
 
   const [stats] = createResource(
     () => sdk.connection.status() === "connected",
@@ -68,7 +74,11 @@ export function HomeTokenUsage() {
         tokens: totalTokens(entry.tokens),
       }))
       .sort((a, b) => b.tokens - a.tokens)
-      .slice(0, 6)
+  })
+
+  const visibleModels = createMemo(() => {
+    const all = models()
+    return state.expanded ? all : all.slice(0, MAX_COLLAPSED_MODELS)
   })
 
   const total = createMemo(() => {
@@ -79,14 +89,45 @@ export function HomeTokenUsage() {
     return totalTokens(snapshot.tokens)
   })
 
+  const toggle = () => {
+    setState("expanded", !state.expanded)
+  }
+
+  const canToggle = models().length > MAX_COLLAPSED_MODELS
+
   return (
     <Show when={sdk.connection.status() === "connected"}>
       <section class="flex min-w-0 flex-col gap-2 rounded-[10px] bg-v2-background-bg-layer-01 p-4 shadow-[var(--v2-elevation-raised)]">
         <div class="flex items-center justify-between">
           <span class="text-13-medium [font-weight:530]">{language.t("home.tokenUsage.title")}</span>
-          <span class="text-11-regular text-v2-text-text-muted">
-            {language.t("home.tokenUsage.total", { total: compact.format(total()) })}
-          </span>
+          <div class="flex items-center gap-2">
+            <span class="text-11-regular text-v2-text-text-muted">
+              {language.t("home.tokenUsage.total", { total: compact.format(total()) })}
+            </span>
+            <Show when={canToggle}>
+              <IconButton
+                type="button"
+                variant="ghost-muted"
+                size="small"
+                class="text-v2-icon-icon-muted"
+                icon={
+                  <Icon
+                    name="chevron-down"
+                    size="small"
+                    class="transition-transform duration-150 ease-in-out"
+                    style={{ transform: `rotate(${state.expanded ? 0 : -90}deg)` }}
+                  />
+                }
+                aria-label={
+                  state.expanded
+                    ? language.t("home.tokenUsage.collapse")
+                    : language.t("home.tokenUsage.expand")
+                }
+                aria-expanded={state.expanded}
+                onClick={toggle}
+              />
+            </Show>
+          </div>
         </div>
         <Show when={stats.loading}>
           <span class="text-11-regular text-v2-text-text-muted">{language.t("home.tokenUsage.loading")}</span>
@@ -95,7 +136,7 @@ export function HomeTokenUsage() {
           <span class="text-11-regular text-v2-text-text-muted">{language.t("home.tokenUsage.empty")}</span>
         </Show>
         <div class="flex min-w-0 flex-col gap-1">
-          <For each={models()}>
+          <For each={visibleModels()}>
             {(entry) => {
               const share = total() ? (entry.tokens / total()) * 100 : 0
               return (

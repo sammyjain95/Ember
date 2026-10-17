@@ -525,6 +525,8 @@ export const dict = {
   "home.tokenUsage.loading": "Loading usage…",
   "home.tokenUsage.empty": "No token usage recorded yet.",
   "home.tokenUsage.total": "{{total}} total",
+  "home.tokenUsage.expand": "Expand",
+  "home.tokenUsage.collapse": "Collapse",
 
   "session.tab.session": "Session",
   "session.tab.more": "More...",
