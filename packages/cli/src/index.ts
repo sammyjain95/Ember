@@ -57,6 +57,11 @@ const Handlers = Runtime.handlers(Commands, {
     update: () => import("./commands/handlers/plugin/update"),
     remove: () => import("./commands/handlers/plugin/remove"),
   },
+  skill: {
+    list: () => import("./commands/handlers/skill/list"),
+    add: () => import("./commands/handlers/skill/add"),
+    remove: () => import("./commands/handlers/skill/remove"),
+  },
   models: () => import("./commands/handlers/models"),
   stats: () => import("./commands/handlers/stats"),
   mini: () => import("./commands/handlers/mini"),
